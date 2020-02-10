@@ -3,4 +3,4 @@
 #$ -N kscc
 #$ -q kscc.q
 
-./virus < virus.500.100.in > virus.out
+./virus < virus.in > virus.out
