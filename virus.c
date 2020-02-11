@@ -7,10 +7,10 @@
 #define MAX_DAY 1000
 #define INFECTION_LENGTH 15
 
-#define DEBUG_LEVEL 0
+#define DEBUG_LEVEL 1
 // 0 = OFF, 1 = INFO, 2 = VERBOSE
 
-#define TIME_REPORT 0
+#define TIME_REPORT 1
 // Benchmark time taken to calculate (not including stdin reading)
 // 0 = OFF, 1 = ON
 
@@ -58,6 +58,38 @@ PersonInit peopleInitValue[MAX_PEOPLE];
 Person people[MAX_PEOPLE];
 unsigned short idTable[PEOPLE_ID_LUT_SIZE];
 unsigned short peopleInfectiousValue[MAX_PEOPLE];
+
+unsigned short checkNear(int sx1, int sy1, int sx2, int sy2, int px1, int py1, int px2, int py2) {
+    double xsp1 = sx2 - sx1 - px2 + px1;
+    double ysp1 = sy2 - sy1 - py2 + py1;
+    double xsp2 = sx1 - px1;
+    double ysp2 = sy1 - py1;
+
+    double a = (xsp1 * xsp1) + (ysp1 * ysp1);
+    double b = (2 * xsp1 * xsp2) + (2 * ysp1 * ysp2);
+    double c = (xsp2 * xsp2) + (ysp2 * ysp2) - 100;
+
+// TODO Check if this is needed ( prevent ( /2a ) from causing problem)
+//    if (a == 0) {
+//        return 0;
+//    }
+
+    double a2 = 2 * a;
+    double bb = b * b;
+    double ac4 = a * c * 4;
+    double bb4ac = bb - ac4;
+
+    if (bb4ac <= 0) {
+        return 0;
+    }
+
+    double sqrtbb4ac = sqrt(bb4ac);
+
+    double min = (0 - b - sqrtbb4ac) / a2;
+    double max = (0 - b + sqrtbb4ac) / a2;
+
+    return max >= 0 && min <= 1;
+}
 
 void parseInput() {
     scanf("%hu", &numPeople);
@@ -152,33 +184,8 @@ unsigned short simulate(Person localPeople[]) {
                     Person *personB = &localPeople[j];
                     if (personB->status != 0) continue;
 
-                    unsigned short isNear = 0;
-
-                    double xsp1 = person->toX - person->x - personB->toX + personB->x;
-                    double ysp1 = person->toY - person->y - personB->toY + personB->y;
-                    double xsp2 = person->x - personB->x;
-                    double ysp2 = person->y - personB->y;
-
-                    double a = (xsp1 * xsp1) + (ysp1 * ysp1);
-                    double b = (2 * xsp1 * xsp2) + (2 * ysp1 * ysp2);
-                    double c = (xsp2 * xsp2) + (ysp2 * ysp2) - 100;
-
-                    double a2 = 2 * a;
-                    double bb = b * b;
-                    double ac4 = a * c * 4;
-                    double bb4ac = bb - ac4;
-
-                    if (bb4ac > 0) {
-                        double sqrtbb4ac = sqrt(bb4ac);
-
-                        double min = (0 - b - sqrtbb4ac) / a2;
-                        double max = (0 - b + sqrtbb4ac) / a2;
-
-                        isNear = max >= 0 && min <= 1;
-                    }
-
-
-                    if (isNear) {
+                    if (checkNear(person->x, person->y, person->toX, person->toY,
+                                  personB->x, personB->y, personB->toX, personB->toY)) {
                         personB->status = 1;
 #if DEBUG_LEVEL >= 2
                         printf("ID=%d infected ID=%d\n", person->id, personB->id);
